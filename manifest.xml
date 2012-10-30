@@ -1,0 +1,18 @@
+<package>
+  <description brief="imagepub_pinocchio">
+
+     imagepub_pinocchio
+
+  </description>
+  <author>viki</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/imagepub_pinocchio</url>
+  <depend package="roscpp"/>
+  <depend package="image_transport"/>
+  <depend package="cv_bridge"/>
+  <depend package="dynamic_reconfigure"/>
+
+</package>
+
+

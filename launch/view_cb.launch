@@ -1,0 +1,8 @@
+<launch>
+	<node pkg="imagepub_pinocchio" name="cb" type="cb_publisher"/>
+
+	<node pkg="image_view" name="cb_view" type="image_view">
+		<remap from="image" to="/cb_publisher/cb_image"/>
+	</node>
+	
+</launch>

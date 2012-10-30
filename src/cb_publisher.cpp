@@ -1,0 +1,121 @@
+#include "ros/ros.h"
+#include "sensor_msgs/Image.h"
+#include "sensor_msgs/fill_image.h"
+//#include "ros/node_handler.h"
+#include <stdint.h>
+#include <string>
+
+using namespace std;
+
+bool create_img(sensor_msgs::Image& img, uint32_t width, uint32_t height, uint32_t square_size)
+{
+  if(square_size > width || square_size > height){
+    ROS_INFO("square size is bigger than image hight or width");
+    return false;
+  }
+ 
+  uint8_t image_tmp[width][height];
+  uint8_t image_data[width*height];
+  bool black = true;
+  
+  for(int i = 0, counti = 0; i < height; i++, counti++){
+    int countj = 0;
+    if(counti < square_size)
+      countj = 0;
+    else if(counti < square_size*2 && counti >= square_size)
+      countj = square_size;
+    else{
+      counti = 0;
+      countj = 0;
+    }
+    for(int j = 0; j < width; j++, countj++){
+      if(countj == square_size*2)
+	countj = 0;
+      if(countj < square_size)
+	image_tmp[i][j] = 255;
+      else if(countj >= square_size && countj < square_size*2)
+	image_tmp[i][j] = 0;
+      else ROS_INFO("didn't fill all image data");
+    }
+  }
+
+  // convert matrix to an array;
+  int index = 0;
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
+      image_data[index] = image_tmp[i][j];
+      index++;
+    }
+  }
+  // cout << "bool: " << sensor_msgs::fillImage(img, sensor_msgs::image_encodings::TYPE_8UC1, height, width, width, img_data) << endl;
+  return sensor_msgs::fillImage(img, sensor_msgs::image_encodings::TYPE_8UC1, height, width, width, image_data);
+}
+
+int main(int argc, char** argv)
+{
+  uint32_t width,height,square_size, frequency;
+  // initialize a node with the name cb_publisher
+  ros::init(argc,argv,"cb_publisher");
+  // if needed parameters are given
+  ros::NodeHandle nh("cb_publisher");
+ 
+  if(argc == 5){
+    width = atoi(argv[1]);
+    height = atoi(argv[2]);
+    square_size = atoi(argv[3]);
+    frequency = atoi(argv[4]);
+  }
+  else if(argc == 1){
+    string arg;
+    if(!nh.getParam("/width", arg)){
+      ROS_INFO("no parameter width on the paraneter server");
+      width = 9;
+    }
+    else width = atoi(arg.c_str());
+    if(!nh.getParam("/height", arg)){
+      ROS_INFO("no parameter height on the parameter server");
+      height = 9;
+    }
+     else height = atoi(arg.c_str());
+    if(!nh.getParam("/square_size", arg)){
+      ROS_INFO("no parameter square_size on the parameter server");
+      square_size = 3;
+    }
+    else square_size = atoi(arg.c_str());
+    if(!nh.getParam("/frequency", arg)){
+      ROS_INFO("no parameter frequency on the parameter server");
+      frequency = 10;
+    }
+     else frequency = atoi(arg.c_str());
+  }
+  else{
+    ROS_INFO("wrong number of arguments");
+    return 1;
+  }
+  
+  /* nh.setParam("/width", width);
+  nh.setParam("/height", height);
+  nh.setParam("/square_size", square_size);
+  nh.setParam("/frequency", frequency);
+  */
+  
+  sensor_msgs::Image img;
+  if(!create_img(img, width, height, square_size)){
+    ROS_INFO("couln't create image");
+    return 1;
+  }
+  //  cout << "iamge->width: " << image.width;
+  
+
+  ros::Publisher image_pub = nh.advertise<sensor_msgs::Image>("cb_image",1000);
+  
+  ros::Rate loop_rate(frequency);
+  while (nh.ok()) {
+    image_pub.publish(img);
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
+  
+  return 0;
+
+}
